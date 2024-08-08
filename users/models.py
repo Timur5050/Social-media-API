@@ -1,6 +1,7 @@
 import os
 import uuid
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core import validators
@@ -76,8 +77,13 @@ class User(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
     profile_picture = models.ImageField(null=True, upload_to=image_path)
     bio = models.TextField(null=True, blank=True)
+    followers = models.ManyToManyField("self", blank=True)
+    following = models.ManyToManyField("self", blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    def __str__(self):
+        return str(self.username)
