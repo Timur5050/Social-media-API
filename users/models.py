@@ -1,8 +1,12 @@
+import os
+import uuid
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.core import validators
 from django.db import models
 from django.utils.deconstruct import deconstructible
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 
@@ -47,6 +51,13 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
+def image_path(instance, filename):
+    _, extension = os.path.splitext(filename)
+    url = f"{slugify(instance.username)}-{uuid.uuid4()}{extension}"
+
+    return os.path.join("uploads/user-profiles/", url)
+
+
 class User(AbstractUser):
     username_validator = UnicodeUsernameValidator()
     username = models.CharField(
@@ -63,6 +74,8 @@ class User(AbstractUser):
         blank=True
     )
     email = models.EmailField(_("email address"), unique=True)
+    profile_picture = models.ImageField(null=True, upload_to=image_path)
+    bio = models.TextField(null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
