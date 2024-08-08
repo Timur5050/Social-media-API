@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from users.serializers import UserCreateSerializer, UserSerializer, UserRetrieveSerializer
 
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
 
 
 class CreateUserView(CreateAPIView):
@@ -39,6 +40,8 @@ def follow_user_view(request: Request, pk: int) -> Response:
         return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
     user_to_follow = user_to_follow[0]
     if not (user_to_follow.followers.filter(id=request.user.id).exists()):
+        if user_to_follow.id == request.user.id:
+            return Response("You can not follow yourself", status=status.HTTP_400_BAD_REQUEST)
         user_to_follow.followers.add(request.user)
         return Response("User has been followed successfully", status=status.HTTP_200_OK)
 
@@ -52,7 +55,24 @@ def unfollow_user_view(request: Request, pk: int) -> Response:
         return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
     user_to_unfollow = user_to_unfollow[0]
     if request.user.following.filter(id=user_to_unfollow.id).exists():
+        if user_to_unfollow.id == request.user.id:
+            return Response("You can not unfollow yourself", status=status.HTTP_400_BAD_REQUEST)
         user_to_unfollow.followers.remove(request.user)
         return Response("User has been unfollowed successfully", status=status.HTTP_200_OK)
 
     return Response("You are not following this user", status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserRetrieveListAPIView(
+    ListModelMixin,
+    RetrieveModelMixin,
+    GenericAPIView
+):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserRetrieveSerializer
+
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        print(args, kwargs)
+        if "pk" in kwargs:
+            return self.retrieve(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)

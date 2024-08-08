@@ -9,7 +9,8 @@ from users.views import (
     CreateUserView,
     RetrieveUpdateUserView,
     follow_user_view,
-    unfollow_user_view
+    unfollow_user_view,
+    UserRetrieveListAPIView
 )
 
 from django.urls import path
@@ -23,6 +24,8 @@ urlpatterns = [
     path("logout/", TokenBlacklistView.as_view(), name="logout"),
     path("follow/<int:pk>/", follow_user_view, name="follow"),
     path("unfollow/<int:pk>/", unfollow_user_view, name="unfollow"),
+    path("users/", UserRetrieveListAPIView.as_view(), name="users"),
+    path("users/<int:pk>/", UserRetrieveListAPIView.as_view(), name="user-detail"),
 ]
 
 app_name = "users"
