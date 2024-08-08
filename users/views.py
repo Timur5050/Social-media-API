@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from users.serializers import UserCreateSerializer, UserSerializer, UserRetrieveSerializer
 
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, GenericAPIView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, GenericAPIView, get_object_or_404
 
 
 class CreateUserView(CreateAPIView):
@@ -35,10 +35,7 @@ class RetrieveUpdateUserView(RetrieveUpdateAPIView):
 
 @api_view(["GET", "POST"])
 def follow_user_view(request: Request, pk: int) -> Response:
-    user_to_follow = get_user_model().objects.filter(pk=pk)
-    if len(user_to_follow) == 0:
-        return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
-    user_to_follow = user_to_follow[0]
+    user_to_follow = get_object_or_404(get_user_model().objects.all(), pk=pk)
     if not (user_to_follow.followers.filter(id=request.user.id).exists()):
         if user_to_follow.id == request.user.id:
             return Response("You can not follow yourself", status=status.HTTP_400_BAD_REQUEST)
@@ -50,10 +47,7 @@ def follow_user_view(request: Request, pk: int) -> Response:
 
 @api_view(["GET", "POST"])
 def unfollow_user_view(request: Request, pk: int) -> Response:
-    user_to_unfollow = get_user_model().objects.get(pk=pk)
-    if len(user_to_unfollow) == 0:
-        return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
-    user_to_unfollow = user_to_unfollow[0]
+    user_to_unfollow = get_object_or_404(get_user_model().objects.all(), pk=pk)
     if request.user.following.filter(id=user_to_unfollow.id).exists():
         if user_to_unfollow.id == request.user.id:
             return Response("You can not unfollow yourself", status=status.HTTP_400_BAD_REQUEST)
