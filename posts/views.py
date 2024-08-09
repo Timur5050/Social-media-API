@@ -1,15 +1,14 @@
-from django.db.models import F, Q
+from django.db.models import Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import api_view
-from rest_framework.generics import CreateAPIView, get_object_or_404
+from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
-from posts.models import Post, Comment, Like
+from posts.models import Post, Like, Comment
 from posts.permissions import IsOwnerOrReadOnly
 from posts.serializers import PostSerializer, PostRetrieveSerializer, CommentSerializer
-
-from django.shortcuts import render
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -55,6 +54,15 @@ def create_comment(request: Request, pk: int) -> Response:
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ManageCommentView(mixins.RetrieveModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.DestroyModelMixin,
+                        GenericViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsOwnerOrReadOnly, ]
 
 
 @api_view(["GET", "POST"])
