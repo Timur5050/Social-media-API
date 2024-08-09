@@ -1,3 +1,9 @@
+from datetime import datetime
+
+from django.utils import timezone
+
+from posts.tasks import create_scheduled_post
+
 from django.db.models import Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import api_view
@@ -37,9 +43,13 @@ class PostViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        creation_time = request.data.get("creation_time", None)
+        creation_time = datetime.strptime(creation_time, "%Y-%m-%dT%H:%M")
+        if creation_time:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            delay_time = (creation_time - datetime.now()).total_seconds()
+            create_scheduled_post.apply_async((serializer.data, request.user.id), countdown=int(delay_time))
         return_queryset = PostSerializer(self.get_queryset(), many=True)
         return Response(return_queryset.data, status=status.HTTP_201_CREATED)
 

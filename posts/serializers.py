@@ -42,18 +42,6 @@ class PostSerializer(serializers.ModelSerializer):
             "creation_time"
         )
 
-    def create(self, validated_data):
-        creation_time = validated_data.pop("creation_time", None)
-        author = self.context["request"].user
-
-        if creation_time:
-            delay_time = (creation_time - timezone.now()).total_seconds()
-            post_data = validated_data
-            res = create_scheduled_post.apply_async((post_data, author.id), countdown=int(delay_time))
-            return res
-        else:
-            return Post.objects.create(**validated_data, author=author)
-
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
 
