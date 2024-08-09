@@ -7,7 +7,8 @@ from rest_framework.response import Response
 
 from users.serializers import UserCreateSerializer, UserSerializer, UserRetrieveSerializer
 
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView, GenericAPIView, get_object_or_404
+from rest_framework.generics import CreateAPIView, GenericAPIView, get_object_or_404, \
+    RetrieveUpdateDestroyAPIView
 
 
 class CreateUserView(CreateAPIView):
@@ -15,7 +16,7 @@ class CreateUserView(CreateAPIView):
     permission_classes = ()
 
 
-class RetrieveUpdateUserView(RetrieveUpdateAPIView):
+class RetrieveUpdateUserView(RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
 
     # permission_classes = ()
@@ -66,7 +67,14 @@ class UserRetrieveListAPIView(
     serializer_class = UserRetrieveSerializer
 
     def get(self, request: Request, *args, **kwargs) -> Response:
-        print(args, kwargs)
         if "pk" in kwargs:
             return self.retrieve(request, *args, **kwargs)
         return self.list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = get_user_model().objects.all()
+        username = self.request.query_params.get("username", None)
+        if username:
+            queryset = queryset.filter(username__icontains=username)
+
+        return queryset
