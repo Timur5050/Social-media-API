@@ -19,6 +19,7 @@ class Post(models.Model):
     author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     post_image = models.ImageField(null=True, upload_to=image_path)
+    creation_time = models.DateTimeField(null=True, blank=True)
 
 
 class Comment(models.Model):

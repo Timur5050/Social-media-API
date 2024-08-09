@@ -26,17 +26,29 @@ class PostViewSet(viewsets.ModelViewSet):
         return serializer
 
     def get_queryset(self):
-        queryset = self.queryset.filter(Q(author__followers=self.request.user.id) | Q(author__exact=self.request.user))
+        queryset = self.queryset.filter(
+            Q(author__followers=self.request.user.id)
+            | Q(author__exact=self.request.user)
+        ).select_related("author").prefetch_related("comments").prefetch_related("likes")
         title = self.request.query_params.get('title', None)
         if title:
             queryset = queryset.filter(title__icontains=title)
 
         return queryset
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return_queryset = PostSerializer(self.get_queryset(), many=True)
+        return Response(return_queryset.data, status=status.HTTP_201_CREATED)
+
 
 class MyPostsViewSet(PostViewSet):
     def get_queryset(self):
-        queryset = self.queryset.filter(author=self.request.user)
+        queryset = (self.queryset.filter(author=self.request.user)
+                    .select_related("author").prefetch_related("comments")
+                    .prefetch_related("likes"))
         return queryset
 
 

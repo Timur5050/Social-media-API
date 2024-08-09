@@ -21,10 +21,12 @@ class CreateUserView(CreateAPIView):
 class RetrieveUpdateUserView(RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
 
-    # permission_classes = ()
-
     def get_object(self):
-        return self.request.user
+        return get_user_model().objects.prefetch_related(
+            "followers"
+        ).prefetch_related(
+            "following"
+        ).get(pk=self.request.user.pk)
 
     def get_serializer_class(self):
         serializer = self.serializer_class
@@ -76,7 +78,11 @@ class UserRetrieveListAPIView(
         return self.list(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = get_user_model().objects.all()
+        queryset = get_user_model().objects.all().prefetch_related(
+            "followers"
+        ).prefetch_related(
+            "following"
+        )
         username = self.request.query_params.get("username", None)
         if username:
             queryset = queryset.filter(username__icontains=username)

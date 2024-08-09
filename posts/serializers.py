@@ -1,6 +1,10 @@
+from django.utils import timezone
+
 from posts.models import Post, Comment
 
 from rest_framework import serializers
+
+from posts.tasks import create_scheduled_post
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -34,14 +38,21 @@ class PostSerializer(serializers.ModelSerializer):
             "description",
             "created",
             "count_of_comments",
-            "count_of_likes"
+            "count_of_likes",
+            "creation_time"
         )
 
     def create(self, validated_data):
-        return Post.objects.create(
-            **validated_data,
-            author=self.context["request"].user
-        )
+        creation_time = validated_data.pop("creation_time", None)
+        author = self.context["request"].user
+
+        if creation_time:
+            delay_time = (creation_time - timezone.now()).total_seconds()
+            post_data = validated_data
+            res = create_scheduled_post.apply_async((post_data, author.id), countdown=int(delay_time))
+            return res
+        else:
+            return Post.objects.create(**validated_data, author=author)
 
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
