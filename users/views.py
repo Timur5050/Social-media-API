@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import redirect
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -68,6 +70,8 @@ class UserRetrieveListAPIView(
 
     def get(self, request: Request, *args, **kwargs) -> Response:
         if "pk" in kwargs:
+            if kwargs["pk"] == request.user.id:
+                return redirect(reverse("users:manage"))
             return self.retrieve(request, *args, **kwargs)
         return self.list(request, *args, **kwargs)
 
