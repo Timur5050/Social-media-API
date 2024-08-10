@@ -10,8 +10,12 @@ from rest_framework.response import Response
 
 from users.serializers import UserCreateSerializer, UserSerializer, UserRetrieveSerializer
 
-from rest_framework.generics import CreateAPIView, GenericAPIView, get_object_or_404, \
+from rest_framework.generics import (
+    CreateAPIView,
+    GenericAPIView,
+    get_object_or_404,
     RetrieveUpdateDestroyAPIView
+)
 
 
 class CreateUserView(CreateAPIView):

@@ -16,7 +16,11 @@ def image_path(instance, filename):
 class Post(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="posts"
+    )
     created = models.DateTimeField(auto_now_add=True)
     post_image = models.ImageField(null=True, upload_to=image_path)
     creation_time = models.DateTimeField(null=True, blank=True)

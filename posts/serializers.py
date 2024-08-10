@@ -1,10 +1,6 @@
-from django.utils import timezone
-
 from posts.models import Post, Comment
 
 from rest_framework import serializers
-
-from posts.tasks import create_scheduled_post
 
 
 class CommentSerializer(serializers.ModelSerializer):

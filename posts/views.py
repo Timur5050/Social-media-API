@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
 
 from posts.tasks import create_scheduled_post
