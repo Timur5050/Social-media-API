@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
 
 from posts.tasks import create_scheduled_post
 
@@ -17,6 +18,26 @@ from posts.permissions import IsOwnerOrReadOnly
 from posts.serializers import PostSerializer, PostRetrieveSerializer, CommentSerializer
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="get list of posts from the authors i follow",
+    ),
+    retrieve=extend_schema(
+        summary="retrieve post from the author i follow"
+    ),
+    update=extend_schema(
+        summary="update my post"
+    ),
+    partial_update=extend_schema(
+        summary="partial my your post",
+    ),
+    create=extend_schema(
+        summary="create new post if i am authenticated",
+    ),
+    destroy=extend_schema(
+        summary="delete my post",
+    ),
+)
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -36,7 +57,7 @@ class PostViewSet(viewsets.ModelViewSet):
             Q(author__followers=self.request.user.id)
             | Q(author__exact=self.request.user)
         ).select_related("author").prefetch_related("comments").prefetch_related("likes")
-        title = self.request.query_params.get('title', None)
+        title = self.request.query_params.get("title", None)
         if title:
             queryset = queryset.filter(title__icontains=title)
 
@@ -55,7 +76,39 @@ class PostViewSet(viewsets.ModelViewSet):
         return_queryset = PostSerializer(self.get_queryset(), many=True)
         return Response(return_queryset.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type={"type": "str"},
+                description="Filter by title  (ex. ?title=sport)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(self, request, *args, **kwargs)
 
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="get list my posts",
+    ),
+    retrieve=extend_schema(
+        summary="retrieve post my posts"
+    ),
+    update=extend_schema(
+        summary="update my post"
+    ),
+    partial_update=extend_schema(
+        summary="partial update my post",
+    ),
+    create=extend_schema(
+        summary="create new post if you are authenticated",
+    ),
+    destroy=extend_schema(
+        summary="delete my post",
+    ),
+)
 class MyPostsViewSet(PostViewSet):
     def get_queryset(self):
         queryset = (self.queryset.filter(author=self.request.user)
@@ -64,6 +117,9 @@ class MyPostsViewSet(PostViewSet):
         return queryset
 
 
+@extend_schema(
+    responses={200: CommentSerializer},
+)
 @api_view(["GET", "POST"])
 def create_comment(request: Request, pk: int) -> Response:
     if request.method == 'GET':
@@ -80,6 +136,17 @@ def create_comment(request: Request, pk: int) -> Response:
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary="retrieve comment my comments"
+    ),
+    update=extend_schema(
+        summary="update my comment"
+    ),
+    destroy=extend_schema(
+        summary="delete my comment",
+    ),
+)
 class ManageCommentView(mixins.RetrieveModelMixin,
                         mixins.UpdateModelMixin,
                         mixins.DestroyModelMixin,
@@ -89,6 +156,9 @@ class ManageCommentView(mixins.RetrieveModelMixin,
     permission_classes = [IsOwnerOrReadOnly, ]
 
 
+@extend_schema(
+    responses={200: PostRetrieveSerializer},
+)
 @api_view(["GET", "POST"])
 def like_post(request: Request, pk: int) -> Response:
     post = get_object_or_404(Post.objects.all(), pk=pk)
@@ -115,6 +185,9 @@ def unlike_post(request: Request, pk: int) -> Response:
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    responses={200: PostSerializer},
+)
 @api_view(["GET"])
 def get_liked_posts(request: Request) -> Response:
     posts = Post.objects.filter(likes__author__exact=request.user.id)

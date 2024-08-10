@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 from django.urls import reverse
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -70,12 +71,33 @@ class UserRetrieveListAPIView(
     queryset = get_user_model().objects.all()
     serializer_class = UserRetrieveSerializer
 
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        if "pk" in kwargs:
-            if kwargs["pk"] == request.user.id:
-                return redirect(reverse("users:manage"))
-            return self.retrieve(request, *args, **kwargs)
-        return self.list(request, *args, **kwargs)
+    @extend_schema(
+        operation_id="list_users",
+        description="List all users with optional username filter.",
+    )
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        operation_id="retrieve_user",
+        description="Retrieve a user by ID.",
+    )
+    def retrieve(self, request: Request, *args, **kwargs) -> Response:
+        if kwargs.get("pk") == request.user.id:
+            return redirect(reverse("users:manage"))
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "username",
+                type={"type": "str"},
+                description="Filter by username  (ex. ?username=noname)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(self, request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = get_user_model().objects.all().prefetch_related(
