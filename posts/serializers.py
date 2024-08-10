@@ -42,6 +42,12 @@ class PostSerializer(serializers.ModelSerializer):
             "creation_time"
         )
 
+    def create(self, validated_data):
+        return Post.objects.create(
+            **validated_data,
+            author=self.context["request"].user
+        )
+
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
 
