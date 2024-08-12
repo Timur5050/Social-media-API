@@ -14,6 +14,7 @@ This Social Media API, built using Django Rest Framework (DRF), leverages RESTfu
 - Docker and docker-compose
 - PostgreSQL
 - Permissions
+- Swagger documentation
 
 # Run program using GitHub
 To run Celery with both a worker in separate terminals, you can follow these instructions. This will ensure your Celery tasks are processed and scheduled correctly. Below is a step-by-step guide for setting up and starting the Celery worker.
